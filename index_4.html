@@ -1,0 +1,1097 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/>
+<title>ระบบบันทึกค่าใช้จ่ายโครงการ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=Kanit:wght@600;700;800&display=swap" rel="stylesheet"/>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#f7f6f2}
+body{font-family:'Sarabun',sans-serif;-webkit-font-smoothing:antialiased;color:#1a1a2e}
+#root{height:100%}
+input,select,textarea{font-family:'Sarabun',sans-serif}
+input:focus,select:focus,textarea:focus{outline:none}
+button{cursor:pointer;font-family:'Sarabun',sans-serif}
+button:disabled{opacity:.5;cursor:not-allowed}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-thumb{background:#c4bfb0;border-radius:4px}
+
+/* ── VARIABLES ── */
+:root{
+  --bg:#f7f6f2;
+  --bg2:#eeeae0;
+  --card:#ffffff;
+  --border:#e0dbd0;
+  --text:#1a1a2e;
+  --text2:#6b6560;
+  --text3:#9e9890;
+  --accent:#c8521a;
+  --accent2:#e8742a;
+  --green:#2d7d4f;
+  --blue:#1e5fa0;
+  --yellow:#c49b1a;
+  --red:#c0392b;
+  --sidebar-w:240px;
+}
+
+/* ── LAYOUT ── */
+.layout{display:flex;min-height:100dvh}
+.sidebar{width:var(--sidebar-w);background:#1a1a2e;position:fixed;top:0;left:0;bottom:0;z-index:200;display:flex;flex-direction:column;overflow-y:auto}
+.main{margin-left:var(--sidebar-w);flex:1;min-height:100dvh;background:var(--bg)}
+@media(max-width:768px){
+  .sidebar{width:100%;height:auto;position:sticky;top:0;flex-direction:row;flex-wrap:wrap;overflow:visible;padding:8px}
+  .main{margin-left:0}
+  .sidebar-brand,.sidebar-section-label{display:none}
+  .sidebar-bottom{display:none}
+}
+
+/* ── SIDEBAR ── */
+.sidebar-brand{padding:24px 20px 16px;border-bottom:1px solid rgba(255,255,255,0.07)}
+.sidebar-logo{font-family:'Kanit',sans-serif;font-size:18px;font-weight:800;color:#fff;letter-spacing:-0.5px;line-height:1.2}
+.sidebar-sub{font-size:10px;color:rgba(255,255,255,0.35);margin-top:3px;letter-spacing:1px;text-transform:uppercase}
+.sidebar-nav{flex:1;padding:12px 10px}
+.sidebar-section-label{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,0.25);padding:12px 10px 6px}
+.nav-btn{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border-radius:8px;border:none;background:none;color:rgba(255,255,255,0.5);font-size:13px;font-weight:500;text-align:left;margin-bottom:2px;transition:all .15s}
+.nav-btn:hover{background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.85)}
+.nav-btn.active{background:var(--accent);color:#fff}
+.nav-btn .icon{font-size:16px;width:20px;text-align:center}
+.sidebar-bottom{padding:16px 10px;border-top:1px solid rgba(255,255,255,0.07);margin-top:auto}
+@media(max-width:768px){
+  .nav-btn{width:auto;padding:8px 10px;flex-direction:column;gap:2px;font-size:10px;border-radius:8px}
+  .nav-btn .icon{font-size:18px}
+}
+
+/* ── PAGE ── */
+.page{padding:28px 32px;max-width:1200px}
+@media(max-width:768px){.page{padding:16px}}
+.page-header{margin-bottom:24px}
+.page-title{font-family:'Kanit',sans-serif;font-size:24px;font-weight:700;color:var(--text);letter-spacing:-0.5px}
+.page-subtitle{font-size:13px;color:var(--text2);margin-top:4px}
+
+/* ── CARDS ── */
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px}
+.card-sm{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px}
+
+/* ── STAT CARDS ── */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
+@media(max-width:900px){.stat-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:500px){.stat-grid{grid-template-columns:1fr 1fr}}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 20px;position:relative;overflow:hidden}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--accent-bar,var(--accent))}
+.stat-label{font-size:11px;color:var(--text3);font-weight:600;letter-spacing:.5px;text-transform:uppercase}
+.stat-value{font-family:'Kanit',sans-serif;font-size:26px;font-weight:700;color:var(--text);margin-top:6px;letter-spacing:-1px}
+.stat-sub{font-size:11px;color:var(--text2);margin-top:4px}
+
+/* ── TABLE ── */
+.tbl-wrap{border-radius:12px;border:1px solid var(--border);overflow:hidden}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{background:#f0ede5;color:var(--text2);font-weight:700;padding:11px 14px;text-align:left;font-size:11px;letter-spacing:.5px;text-transform:uppercase;white-space:nowrap}
+.tbl td{padding:11px 14px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:#faf8f4}
+.tbl-wrap-scroll{overflow-x:auto}
+
+/* ── FORMS ── */
+.field{margin-bottom:14px}
+.field label{display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:5px;letter-spacing:.3px}
+.inp{width:100%;padding:10px 13px;background:#faf8f4;border:1px solid var(--border);border-radius:9px;color:var(--text);font-size:14px;transition:border .15s}
+.inp:focus{border-color:var(--accent);background:#fff}
+.inp-sm{padding:7px 11px;font-size:13px}
+select.inp option{background:#fff;color:var(--text)}
+textarea.inp{resize:vertical;min-height:80px}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:560px){.field-row{grid-template-columns:1fr}}
+
+/* ── BUTTONS ── */
+.btn{padding:10px 20px;border-radius:9px;border:none;font-weight:600;font-size:14px;display:inline-flex;align-items:center;gap:7px;transition:all .15s}
+.btn:active{transform:scale(0.97)}
+.btn-primary{background:var(--accent);color:#fff;box-shadow:0 3px 12px rgba(200,82,26,0.25)}
+.btn-primary:hover{background:var(--accent2)}
+.btn-success{background:var(--green);color:#fff}
+.btn-ghost{background:var(--bg2);border:1px solid var(--border);color:var(--text2)}
+.btn-ghost:hover{color:var(--text);border-color:#c4bfb0}
+.btn-danger{background:rgba(192,57,43,0.1);border:1px solid rgba(192,57,43,0.25);color:var(--red)}
+.btn-sm{padding:6px 14px;font-size:12px;border-radius:7px}
+.btn-xs{padding:4px 10px;font-size:11px;border-radius:6px}
+.btn-icon{padding:7px;border-radius:7px}
+
+/* ── BADGES ── */
+.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap}
+.badge-green{background:rgba(45,125,79,0.12);color:var(--green);border:1px solid rgba(45,125,79,0.2)}
+.badge-orange{background:rgba(200,82,26,0.12);color:var(--accent);border:1px solid rgba(200,82,26,0.2)}
+.badge-blue{background:rgba(30,95,160,0.12);color:var(--blue);border:1px solid rgba(30,95,160,0.2)}
+.badge-yellow{background:rgba(196,155,26,0.12);color:var(--yellow);border:1px solid rgba(196,155,26,0.2)}
+.badge-gray{background:var(--bg2);color:var(--text2);border:1px solid var(--border)}
+
+/* ── MODAL ── */
+.modal-backdrop{position:fixed;inset:0;background:rgba(26,26,46,0.5);backdrop-filter:blur(4px);z-index:500;display:flex;align-items:center;justify-content:center;padding:16px}
+.modal{background:#fff;border:1px solid var(--border);border-radius:18px;padding:26px;width:100%;max-width:600px;max-height:92dvh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.15)}
+.modal-title{font-family:'Kanit',sans-serif;font-size:18px;font-weight:700;color:var(--text);margin-bottom:20px}
+
+/* ── PROGRESS ── */
+.progress-track{height:7px;border-radius:8px;background:var(--bg2);overflow:hidden}
+.progress-fill{height:100%;border-radius:8px;transition:width .5s}
+
+/* ── MISC ── */
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.fade-in{animation:fadeIn .2s ease}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin{display:inline-block;animation:spin 1s linear infinite}
+.skeleton{background:linear-gradient(90deg,#eeeae0 25%,#e5e0d5 50%,#eeeae0 75%);background-size:200%;animation:shimmer 1.4s infinite;border-radius:8px}
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+.divider{border:none;border-top:1px solid var(--border);margin:18px 0}
+.empty{text-align:center;padding:40px;color:var(--text3)}
+.empty-icon{font-size:36px;margin-bottom:10px}
+.text-right{text-align:right}
+.text-center{text-align:center}
+.fw-bold{font-weight:700}
+.flex{display:flex;align-items:center}
+.flex-between{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.gap-2{gap:8px}
+.gap-3{gap:12px}
+.mt-1{margin-top:6px}
+.mt-2{margin-top:12px}
+.mt-3{margin-top:18px}
+.mb-2{margin-bottom:12px}
+.chip-row{display:flex;flex-wrap:wrap;gap:6px}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:24px;right:24px;padding:12px 20px;border-radius:10px;font-size:14px;font-weight:500;z-index:999;box-shadow:0 8px 24px rgba(0,0,0,0.12);animation:fadeIn .2s ease}
+.toast-ok{background:#1a1a2e;color:#fff}
+.toast-err{background:var(--red);color:#fff}
+
+/* ── LOADING BAR ── */
+.loading-bar{position:fixed;top:0;left:0;right:0;height:3px;z-index:999;background:linear-gradient(90deg,var(--accent),var(--accent2),var(--accent));background-size:200%;animation:shimmer .8s infinite}
+
+/* ── CHART BARS ── */
+.chart-bar-wrap{display:flex;flex-direction:column;gap:10px}
+.chart-row{display:grid;grid-template-columns:120px 1fr 100px;gap:10px;align-items:center;font-size:12px}
+.chart-label{color:var(--text2);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chart-val{color:var(--text);font-weight:700;text-align:right}
+
+/* ── SUMMARY TABLE FOOTER ── */
+.tbl tfoot td{background:#f0ede5;font-weight:700;color:var(--text)}
+
+/* ── FILTER BAR ── */
+.filter-bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+.filter-bar .inp{width:auto;min-width:140px}
+
+/* ── TOP LOADING ── */
+.top-loader{position:fixed;top:0;left:0;width:100%;height:3px;background:linear-gradient(90deg,#c8521a,#e8742a);z-index:9999;animation:shimmer 1s linear infinite;background-size:200%}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useCallback, useRef, useMemo } = React;
+
+// ── CONFIG ──────────────────────────────────────────────────────
+const GAS_URL = "https://script.google.com/macros/s/AKfycbxxWFDDcsT_ztXLYmSwbYntW56ggcSdIIs7CuWM_xqa5RZaVG44p5zG7ok6ZCTvcpqM/exec"; // ← ใส่ URL ของ Apps Script
+
+// ── API ─────────────────────────────────────────────────────────
+async function apiGet(params) {
+  const res = await fetch(`${GAS_URL}?${new URLSearchParams(params)}`, {
+    method: "GET",
+    redirect: "follow",   // ← สำคัญมาก GAS มี redirect
+  });
+  return res.json();
+}
+async function apiPost(body) {
+  const res = await fetch(GAS_URL, { method:"POST", redirect:"follow", body:JSON.stringify(body) });
+  return res.json();
+}
+
+// ── UTILS ────────────────────────────────────────────────────────
+const fmt = n => new Intl.NumberFormat("th-TH",{minimumFractionDigits:2}).format(n||0);
+const fmtN = n => new Intl.NumberFormat("th-TH").format(n||0);
+const thDate = iso => iso ? new Date(iso).toLocaleDateString("th-TH",{day:"2-digit",month:"short",year:"numeric"}) : "-";
+const uid = () => Date.now().toString(36);
+
+const COLORS = ["#c8521a","#1e5fa0","#2d7d4f","#c49b1a","#7c3aed","#0891b2","#be185d","#047857"];
+
+// ── TOAST ────────────────────────────────────────────────────────
+function Toast({ msg, type, onClose }) {
+  useEffect(() => { if(msg) { const t=setTimeout(onClose,3000); return ()=>clearTimeout(t); } }, [msg]);
+  if(!msg) return null;
+  return <div className={`toast toast-${type}`}>{msg}</div>;
+}
+
+// ── CONFIRM DIALOG ───────────────────────────────────────────────
+function Confirm({ msg, onOk, onCancel }) {
+  return (
+    <div className="modal-backdrop" onClick={e=>e.target===e.currentTarget&&onCancel()}>
+      <div className="modal" style={{maxWidth:380}}>
+        <div style={{fontSize:32,textAlign:"center",marginBottom:12}}>⚠️</div>
+        <div style={{textAlign:"center",fontSize:15,color:"var(--text)",marginBottom:20}}>{msg}</div>
+        <div style={{display:"flex",gap:10}}>
+          <button onClick={onOk} className="btn btn-danger" style={{flex:1,justifyContent:"center"}}>ยืนยัน</button>
+          <button onClick={onCancel} className="btn btn-ghost" style={{flex:1,justifyContent:"center"}}>ยกเลิก</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════
+//  DASHBOARD
+// ════════════════════════════════════════════════════════════════
+function Dashboard({ onNav }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    apiGet({ action:"getDashboard" }).then(r => {
+      if(r.ok) setData(r.data);
+      setLoading(false);
+    });
+  }, []);
+
+  if(loading) return (
+    <div className="page fade-in">
+      <div className="page-header"><div className="page-title">แดชบอร์ด</div></div>
+      <div className="stat-grid">{[1,2,3,4].map(i=><div key={i} className="skeleton" style={{height:90}}/>)}</div>
+      <div className="skeleton" style={{height:300,marginBottom:16}}/>
+    </div>
+  );
+
+  if(!data) return <div className="page"><div className="empty"><div className="empty-icon">📡</div>ไม่สามารถโหลดข้อมูลได้</div></div>;
+
+  const { totalProjects, totalExpenses, totalAmount, recentExpenses, byProject, byCategory } = data;
+  const maxAmt = Math.max(...(byProject||[]).map(p=>p.total_amount||0), 1);
+
+  return (
+    <div className="page fade-in">
+      <div className="page-header">
+        <div className="page-title">แดชบอร์ด</div>
+        <div className="page-subtitle">ภาพรวมค่าใช้จ่ายทุกโครงการ</div>
+      </div>
+
+      <div className="stat-grid">
+        {[
+          {label:"โครงการทั้งหมด", value:fmtN(totalProjects||0), sub:"โครงการ", color:"var(--accent)"},
+          {label:"รายการค่าใช้จ่าย", value:fmtN(totalExpenses||0), sub:"รายการ", color:"var(--blue)"},
+          {label:"ยอดรวมทั้งหมด", value:fmt(totalAmount||0), sub:"บาท", color:"var(--green)"},
+          {label:"เฉลี่ยต่อรายการ", value:fmt(totalExpenses ? (totalAmount/totalExpenses) : 0), sub:"บาท/รายการ", color:"var(--yellow)"},
+        ].map((s,i)=>(
+          <div key={i} className="stat-card" style={{"--accent-bar":s.color}}>
+            <div className="stat-label">{s.label}</div>
+            <div className="stat-value">{s.value}</div>
+            <div className="stat-sub">{s.sub}</div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:16}}>
+        {/* By Project */}
+        <div className="card">
+          <div style={{fontFamily:"'Kanit',sans-serif",fontWeight:700,fontSize:15,marginBottom:16}}>ค่าใช้จ่ายตามโครงการ</div>
+          {(byProject||[]).length === 0 ? <div className="empty" style={{padding:20}}>ยังไม่มีข้อมูล</div> : (
+            <div className="chart-bar-wrap">
+              {(byProject||[]).map((p,i)=>{
+                const pct = ((p.total_amount||0)/maxAmt)*100;
+                return (
+                  <div key={i} className="chart-row">
+                    <div className="chart-label" title={p.project_name}>{p.project_name}</div>
+                    <div className="progress-track" style={{background:"var(--bg2)"}}>
+                      <div className="progress-fill" style={{width:`${pct}%`,background:COLORS[i%COLORS.length]}}/>
+                    </div>
+                    <div className="chart-val">{fmt(p.total_amount)} ฿</div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* By Category */}
+        <div className="card">
+          <div style={{fontFamily:"'Kanit',sans-serif",fontWeight:700,fontSize:15,marginBottom:16}}>ค่าใช้จ่ายตามหมวดหมู่</div>
+          {(byCategory||[]).length === 0 ? <div className="empty" style={{padding:20}}>ยังไม่มีข้อมูล</div> : (
+            <div className="chart-bar-wrap">
+              {(byCategory||[]).map((c,i)=>{
+                const maxC = Math.max(...(byCategory||[]).map(x=>x.total_amount||0),1);
+                const pct = ((c.total_amount||0)/maxC)*100;
+                return (
+                  <div key={i} className="chart-row">
+                    <div className="chart-label" title={c.category}>{c.category}</div>
+                    <div className="progress-track">
+                      <div className="progress-fill" style={{width:`${pct}%`,background:COLORS[(i+3)%COLORS.length]}}/>
+                    </div>
+                    <div className="chart-val">{fmt(c.total_amount)} ฿</div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Recent Expenses */}
+      <div className="card">
+        <div className="flex-between mb-2">
+          <div style={{fontFamily:"'Kanit',sans-serif",fontWeight:700,fontSize:15}}>รายการล่าสุด</div>
+          <button className="btn btn-ghost btn-sm" onClick={()=>onNav("expenses")}>ดูทั้งหมด →</button>
+        </div>
+        <div className="tbl-wrap">
+          <table className="tbl">
+            <thead><tr><th>วันที่</th><th>โครงการ</th><th>สนาม/จังหวัด</th><th>หมวด</th><th>รายการ</th><th className="text-right">จำนวนเงิน</th></tr></thead>
+            <tbody>
+              {(recentExpenses||[]).length === 0
+                ? <tr><td colSpan={6} className="empty">ยังไม่มีรายการ</td></tr>
+                : (recentExpenses||[]).map((e,i)=>(
+                  <tr key={i}>
+                    <td style={{whiteSpace:"nowrap",color:"var(--text2)",fontSize:12}}>{thDate(e.created_at)}</td>
+                    <td><span className="badge badge-blue">{e.project_name}</span></td>
+                    <td style={{color:"var(--text2)"}}>{e.location}</td>
+                    <td><span className="badge badge-gray">{e.category}</span></td>
+                    <td>{e.description}</td>
+                    <td className="text-right fw-bold" style={{color:"var(--accent)"}}>{fmt(e.total_amount)} ฿</td>
+                  </tr>
+                ))
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════
+//  PROJECTS PAGE
+// ════════════════════════════════════════════════════════════════
+function ProjectsPage({ showFlash, setLoading }) {
+  const [projects, setProjects] = useState([]);
+  const [loc, setLoc] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [editItem, setEditItem] = useState(null);
+  const [confirm, setConfirm] = useState(null);
+  const blank = { project_name:"", description:"", budget:"", start_date:"", end_date:"" };
+  const [form, setForm] = useState(blank);
+
+  const load = async () => {
+    setLoc(true);
+    const r = await apiGet({ action:"getProjects" });
+    if(r.ok) setProjects(r.data);
+    setLoc(false);
+  };
+  useEffect(() => { load(); }, []);
+
+  const openAdd = () => { setForm(blank); setEditItem(null); setShowModal(true); };
+  const openEdit = p => { setForm({project_name:p.project_name,description:p.description||"",budget:p.budget||"",start_date:p.start_date||"",end_date:p.end_date||""}); setEditItem(p); setShowModal(true); };
+
+  const save = async () => {
+    if(!form.project_name){ showFlash("กรุณากรอกชื่อโครงการ","err"); return; }
+    setLoading(true);
+    const r = await apiPost({ action: editItem ? "editProject" : "addProject", ...form, project_id: editItem?.project_id });
+    if(r.ok){ showFlash(editItem?"แก้ไขสำเร็จ ✓":"เพิ่มโครงการสำเร็จ ✓"); setShowModal(false); await load(); }
+    else showFlash(r.error||"เกิดข้อผิดพลาด","err");
+    setLoading(false);
+  };
+
+  const del = async (id) => {
+    setLoading(true);
+    const r = await apiPost({ action:"deleteProject", project_id:id });
+    if(r.ok){ showFlash("ลบสำเร็จ"); await load(); }
+    else showFlash(r.error||"ลบไม่สำเร็จ","err");
+    setLoading(false);
+    setConfirm(null);
+  };
+
+  return (
+    <div className="page fade-in">
+      <div className="flex-between page-header">
+        <div><div className="page-title">โครงการ</div><div className="page-subtitle">จัดการโครงการทั้งหมด</div></div>
+        <button className="btn btn-primary" onClick={openAdd}>＋ เพิ่มโครงการ</button>
+      </div>
+
+      {loc ? (
+        <div style={{display:"grid",gap:12}}>{[1,2,3].map(i=><div key={i} className="skeleton" style={{height:120}}/>)}</div>
+      ) : projects.length === 0 ? (
+        <div className="card empty"><div className="empty-icon">📁</div><div>ยังไม่มีโครงการ กดปุ่ม "เพิ่มโครงการ" เพื่อเริ่มต้น</div></div>
+      ) : (
+        <div style={{display:"grid",gap:14}}>
+          {projects.map((p,i)=>(
+            <div key={p.project_id} className="card">
+              <div className="flex-between">
+                <div style={{flex:1}}>
+                  <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
+                    <div style={{fontFamily:"'Kanit',sans-serif",fontSize:16,fontWeight:700}}>{p.project_name}</div>
+                    <span className="badge badge-blue">{p.project_id}</span>
+                  </div>
+                  {p.description && <div style={{fontSize:13,color:"var(--text2)",marginTop:4}}>{p.description}</div>}
+                  <div style={{display:"flex",gap:16,marginTop:8,flexWrap:"wrap"}}>
+                    {p.budget && <div style={{fontSize:12,color:"var(--text2)"}}>💰 งบ: <strong style={{color:"var(--text)"}}>{fmt(p.budget)} ฿</strong></div>}
+                    {p.start_date && <div style={{fontSize:12,color:"var(--text2)"}}>📅 {thDate(p.start_date)} — {thDate(p.end_date)}</div>}
+                    <div style={{fontSize:12,color:"var(--text2)"}}>📍 {p.location_count||0} สนาม · {p.expense_count||0} รายการ · <strong style={{color:"var(--accent)"}}>{fmt(p.total_spent||0)} ฿</strong></div>
+                  </div>
+                </div>
+                <div style={{display:"flex",gap:8,flexShrink:0}}>
+                  <button className="btn btn-ghost btn-sm" onClick={()=>openEdit(p)}>✏️ แก้ไข</button>
+                  <button className="btn btn-danger btn-sm" onClick={()=>setConfirm({id:p.project_id,name:p.project_name})}>🗑️</button>
+                </div>
+              </div>
+              {p.budget && (
+                <div style={{marginTop:12}}>
+                  <div style={{display:"flex",justifyContent:"space-between",fontSize:11,color:"var(--text3)",marginBottom:4}}>
+                    <span>ใช้ไปแล้ว {fmt(p.total_spent||0)} ฿</span>
+                    <span>คงเหลือ {fmt((p.budget||0)-(p.total_spent||0))} ฿</span>
+                  </div>
+                  <div className="progress-track">
+                    <div className="progress-fill" style={{
+                      width:`${Math.min(((p.total_spent||0)/(p.budget||1))*100,100)}%`,
+                      background: (p.total_spent||0)/(p.budget||1) > 0.9 ? "var(--red)" : (p.total_spent||0)/(p.budget||1) > 0.7 ? "var(--yellow)" : "var(--green)"
+                    }}/>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {showModal && (
+        <div className="modal-backdrop" onClick={e=>e.target===e.currentTarget&&setShowModal(false)}>
+          <div className="modal">
+            <div className="modal-title">{editItem?"✏️ แก้ไขโครงการ":"➕ เพิ่มโครงการใหม่"}</div>
+            <div className="field"><label>ชื่อโครงการ *</label><input className="inp" value={form.project_name} onChange={e=>setForm({...form,project_name:e.target.value})} placeholder="ชื่อโครงการ"/></div>
+            <div className="field"><label>รายละเอียด</label><textarea className="inp" value={form.description} onChange={e=>setForm({...form,description:e.target.value})} placeholder="อธิบายโครงการ..."/></div>
+            <div className="field"><label>งบประมาณ (฿)</label><input className="inp" type="number" value={form.budget} onChange={e=>setForm({...form,budget:e.target.value})} placeholder="0.00"/></div>
+            <div className="field-row">
+              <div className="field"><label>วันเริ่ม</label><input className="inp" type="date" value={form.start_date} onChange={e=>setForm({...form,start_date:e.target.value})}/></div>
+              <div className="field"><label>วันสิ้นสุด</label><input className="inp" type="date" value={form.end_date} onChange={e=>setForm({...form,end_date:e.target.value})}/></div>
+            </div>
+            <div style={{display:"flex",gap:10}}>
+              <button onClick={save} className="btn btn-primary" style={{flex:1,justifyContent:"center"}}>💾 บันทึก</button>
+              <button onClick={()=>setShowModal(false)} className="btn btn-ghost">ยกเลิก</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {confirm && <Confirm msg={`ต้องการลบโครงการ "${confirm.name}" ใช่มั้ย?`} onOk={()=>del(confirm.id)} onCancel={()=>setConfirm(null)}/>}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════
+//  LOCATIONS PAGE (สนาม/จังหวัด)
+// ════════════════════════════════════════════════════════════════
+function LocationsPage({ showFlash, setLoading }) {
+  const [locations, setLocations] = useState([]);
+  const [loc, setLoc] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [editItem, setEditItem] = useState(null);
+  const [confirm, setConfirm] = useState(null);
+  const blank = { location_name:"", description:"" };
+  const [form, setForm] = useState(blank);
+
+  const load = async () => {
+    setLoc(true);
+    const r = await apiGet({ action:"getLocations" });
+    if(r.ok) setLocations(r.data);
+    setLoc(false);
+  };
+  useEffect(() => { load(); }, []);
+
+  const save = async () => {
+    if(!form.location_name){ showFlash("กรุณากรอกชื่อสนาม/จังหวัด","err"); return; }
+    setLoading(true);
+    const r = await apiPost({ action: editItem ? "editLocation" : "addLocation", ...form, location_id: editItem?.location_id });
+    if(r.ok){ showFlash(editItem?"แก้ไขสำเร็จ ✓":"เพิ่มสำเร็จ ✓"); setShowModal(false); await load(); }
+    else showFlash(r.error,"err");
+    setLoading(false);
+  };
+
+  const del = async id => {
+    setLoading(true);
+    const r = await apiPost({ action:"deleteLocation", location_id:id });
+    if(r.ok){ showFlash("ลบสำเร็จ"); await load(); }
+    else showFlash(r.error||"ลบไม่สำเร็จ","err");
+    setLoading(false); setConfirm(null);
+  };
+
+  return (
+    <div className="page fade-in">
+      <div className="flex-between page-header">
+        <div><div className="page-title">สนาม / จังหวัด</div><div className="page-subtitle">จัดการรายชื่อสถานที่</div></div>
+        <button className="btn btn-primary" onClick={()=>{setForm(blank);setEditItem(null);setShowModal(true)}}>＋ เพิ่มสนาม</button>
+      </div>
+      {loc ? <div className="skeleton" style={{height:200}}/> : (
+        <div className="tbl-wrap">
+          <table className="tbl">
+            <thead><tr><th>#</th><th>ชื่อสนาม/จังหวัด</th><th>รายละเอียด</th><th>รายการค่าใช้จ่าย</th><th>ยอดรวม</th><th></th></tr></thead>
+            <tbody>
+              {locations.length === 0
+                ? <tr><td colSpan={6} className="empty">ยังไม่มีสนาม/จังหวัด</td></tr>
+                : locations.map((l,i)=>(
+                  <tr key={l.location_id}>
+                    <td style={{color:"var(--text3)",fontSize:12}}>{i+1}</td>
+                    <td><strong>{l.location_name}</strong></td>
+                    <td style={{color:"var(--text2)"}}>{l.description||"-"}</td>
+                    <td className="text-center"><span className="badge badge-blue">{l.expense_count||0}</span></td>
+                    <td className="fw-bold" style={{color:"var(--accent)"}}>{fmt(l.total_amount||0)} ฿</td>
+                    <td>
+                      <div style={{display:"flex",gap:6}}>
+                        <button className="btn btn-ghost btn-xs" onClick={()=>{setForm({location_name:l.location_name,description:l.description||""});setEditItem(l);setShowModal(true)}}>✏️</button>
+                        <button className="btn btn-danger btn-xs" onClick={()=>setConfirm({id:l.location_id,name:l.location_name})}>🗑️</button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              }
+            </tbody>
+          </table>
+        </div>
+      )}
+      {showModal && (
+        <div className="modal-backdrop" onClick={e=>e.target===e.currentTarget&&setShowModal(false)}>
+          <div className="modal" style={{maxWidth:420}}>
+            <div className="modal-title">{editItem?"แก้ไขสนาม/จังหวัด":"เพิ่มสนาม/จังหวัดใหม่"}</div>
+            <div className="field"><label>ชื่อสนาม/จังหวัด *</label><input className="inp" value={form.location_name} onChange={e=>setForm({...form,location_name:e.target.value})} placeholder="เช่น เชียงใหม่, สนามกีฬา A"/></div>
+            <div className="field"><label>รายละเอียด</label><input className="inp" value={form.description} onChange={e=>setForm({...form,description:e.target.value})} placeholder="หมายเหตุเพิ่มเติม"/></div>
+            <div style={{display:"flex",gap:10}}>
+              <button onClick={save} className="btn btn-primary" style={{flex:1,justifyContent:"center"}}>💾 บันทึก</button>
+              <button onClick={()=>setShowModal(false)} className="btn btn-ghost">ยกเลิก</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {confirm && <Confirm msg={`ต้องการลบ "${confirm.name}" ใช่มั้ย?`} onOk={()=>del(confirm.id)} onCancel={()=>setConfirm(null)}/>}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════
+//  CATEGORIES PAGE (หมวดหมู่)
+// ════════════════════════════════════════════════════════════════
+function CategoriesPage({ showFlash, setLoading }) {
+  const [cats, setCats] = useState([]);
+  const [loc, setLoc] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [editItem, setEditItem] = useState(null);
+  const [confirm, setConfirm] = useState(null);
+  const [form, setForm] = useState({ category_name:"", description:"" });
+
+  const load = async () => {
+    setLoc(true);
+    const r = await apiGet({ action:"getCategories" });
+    if(r.ok) setCats(r.data);
+    setLoc(false);
+  };
+  useEffect(() => { load(); }, []);
+
+  const save = async () => {
+    if(!form.category_name){ showFlash("กรุณากรอกชื่อหมวดหมู่","err"); return; }
+    setLoading(true);
+    const r = await apiPost({ action: editItem?"editCategory":"addCategory", ...form, category_id: editItem?.category_id });
+    if(r.ok){ showFlash("บันทึกสำเร็จ ✓"); setShowModal(false); await load(); }
+    else showFlash(r.error,"err");
+    setLoading(false);
+  };
+
+  const del = async id => {
+    setLoading(true);
+    const r = await apiPost({ action:"deleteCategory", category_id:id });
+    if(r.ok){ showFlash("ลบสำเร็จ"); await load(); }
+    else showFlash(r.error||"ลบไม่สำเร็จ","err");
+    setLoading(false); setConfirm(null);
+  };
+
+  return (
+    <div className="page fade-in">
+      <div className="flex-between page-header">
+        <div><div className="page-title">หมวดหมู่</div><div className="page-subtitle">จัดการหมวดหมู่ค่าใช้จ่าย</div></div>
+        <button className="btn btn-primary" onClick={()=>{setForm({category_name:"",description:""});setEditItem(null);setShowModal(true)}}>＋ เพิ่มหมวดหมู่</button>
+      </div>
+      {loc ? <div className="skeleton" style={{height:200}}/> : (
+        <div className="tbl-wrap">
+          <table className="tbl">
+            <thead><tr><th>#</th><th>ชื่อหมวดหมู่</th><th>รายละเอียด</th><th>รายการ</th><th>ยอดรวม</th><th></th></tr></thead>
+            <tbody>
+              {cats.length === 0
+                ? <tr><td colSpan={6} className="empty">ยังไม่มีหมวดหมู่</td></tr>
+                : cats.map((c,i)=>(
+                  <tr key={c.category_id}>
+                    <td style={{color:"var(--text3)",fontSize:12}}>{i+1}</td>
+                    <td><strong>{c.category_name}</strong></td>
+                    <td style={{color:"var(--text2)"}}>{c.description||"-"}</td>
+                    <td className="text-center"><span className="badge badge-orange">{c.expense_count||0}</span></td>
+                    <td className="fw-bold" style={{color:"var(--accent)"}}>{fmt(c.total_amount||0)} ฿</td>
+                    <td>
+                      <div style={{display:"flex",gap:6}}>
+                        <button className="btn btn-ghost btn-xs" onClick={()=>{setForm({category_name:c.category_name,description:c.description||""});setEditItem(c);setShowModal(true)}}>✏️</button>
+                        <button className="btn btn-danger btn-xs" onClick={()=>setConfirm({id:c.category_id,name:c.category_name})}>🗑️</button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              }
+            </tbody>
+          </table>
+        </div>
+      )}
+      {showModal && (
+        <div className="modal-backdrop" onClick={e=>e.target===e.currentTarget&&setShowModal(false)}>
+          <div className="modal" style={{maxWidth:420}}>
+            <div className="modal-title">{editItem?"แก้ไขหมวดหมู่":"เพิ่มหมวดหมู่ใหม่"}</div>
+            <div className="field"><label>ชื่อหมวดหมู่ *</label><input className="inp" value={form.category_name} onChange={e=>setForm({...form,category_name:e.target.value})} placeholder="เช่น ค่าแรง, วัสดุ, เดินทาง"/></div>
+            <div className="field"><label>รายละเอียด</label><input className="inp" value={form.description} onChange={e=>setForm({...form,description:e.target.value})} placeholder="คำอธิบายเพิ่มเติม"/></div>
+            <div style={{display:"flex",gap:10}}>
+              <button onClick={save} className="btn btn-primary" style={{flex:1,justifyContent:"center"}}>💾 บันทึก</button>
+              <button onClick={()=>setShowModal(false)} className="btn btn-ghost">ยกเลิก</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {confirm && <Confirm msg={`ต้องการลบ "${confirm.name}" ใช่มั้ย?`} onOk={()=>del(confirm.id)} onCancel={()=>setConfirm(null)}/>}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════
+//  EXPENSES PAGE
+// ════════════════════════════════════════════════════════════════
+function ExpensesPage({ showFlash, setLoading }) {
+  const [expenses, setExpenses] = useState([]);
+  const [projects, setProjects] = useState([]);
+  const [locations, setLocations] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [loc, setLoc] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [editItem, setEditItem] = useState(null);
+  const [confirm, setConfirm] = useState(null);
+  const [filter, setFilter] = useState({ project_id:"", location_id:"", category_id:"", search:"" });
+
+  const blank = { project_id:"", location_id:"", category_id:"", description:"", unit_price:"", quantity:"1", note:"", file_quote:"", file_slip:"", expense_date:"" };
+  const [form, setForm] = useState(blank);
+
+  const load = async () => {
+    setLoc(true);
+    const [er, pr, lr, cr] = await Promise.all([
+      apiGet({ action:"getExpenses" }),
+      apiGet({ action:"getProjects" }),
+      apiGet({ action:"getLocations" }),
+      apiGet({ action:"getCategories" }),
+    ]);
+    if(er.ok) setExpenses(er.data);
+    if(pr.ok) setProjects(pr.data);
+    if(lr.ok) setLocations(lr.data);
+    if(cr.ok) setCategories(cr.data);
+    setLoc(false);
+  };
+  useEffect(() => { load(); }, []);
+
+  const totalAmount = useMemo(()=>(parseFloat(form.unit_price)||0)*(parseFloat(form.quantity)||0),[form.unit_price,form.quantity]);
+
+  const filtered = useMemo(()=>expenses.filter(e=>{
+    if(filter.project_id && e.project_id !== filter.project_id) return false;
+    if(filter.location_id && e.location_id !== filter.location_id) return false;
+    if(filter.category_id && e.category_id !== filter.category_id) return false;
+    if(filter.search && !`${e.description}${e.project_name}${e.location_name}${e.category_name}`.toLowerCase().includes(filter.search.toLowerCase())) return false;
+    return true;
+  }),[expenses, filter]);
+
+  const filteredTotal = useMemo(()=>filtered.reduce((s,e)=>s+(parseFloat(e.total_amount)||0),0),[filtered]);
+
+  const openAdd = () => { setForm(blank); setEditItem(null); setShowModal(true); };
+  const openEdit = e => {
+    setForm({ project_id:e.project_id, location_id:e.location_id, category_id:e.category_id, description:e.description, unit_price:e.unit_price, quantity:e.quantity, note:e.note||"", file_quote:e.file_quote||"", file_slip:e.file_slip||"", expense_date:e.expense_date||"" });
+    setEditItem(e); setShowModal(true);
+  };
+
+  const save = async () => {
+    if(!form.project_id||!form.location_id||!form.category_id||!form.description||!form.unit_price){
+      showFlash("กรุณากรอกข้อมูลให้ครบ (โครงการ / สนาม / หมวด / รายการ / ราคา)","err"); return;
+    }
+    setLoading(true);
+    const r = await apiPost({ action: editItem?"editExpense":"addExpense", ...form, expense_id: editItem?.expense_id });
+    if(r.ok){ showFlash(editItem?"แก้ไขสำเร็จ ✓":"บันทึกค่าใช้จ่ายสำเร็จ ✓"); setShowModal(false); await load(); }
+    else showFlash(r.error||"เกิดข้อผิดพลาด","err");
+    setLoading(false);
+  };
+
+  const del = async id => {
+    setLoading(true);
+    const r = await apiPost({ action:"deleteExpense", expense_id:id });
+    if(r.ok){ showFlash("ลบสำเร็จ"); await load(); }
+    else showFlash(r.error||"ลบไม่สำเร็จ","err");
+    setLoading(false); setConfirm(null);
+  };
+
+  return (
+    <div className="page fade-in">
+      <div className="flex-between page-header">
+        <div><div className="page-title">ค่าใช้จ่าย</div><div className="page-subtitle">บันทึกและดูรายการค่าใช้จ่ายทั้งหมด</div></div>
+        <button className="btn btn-primary" onClick={openAdd}>＋ บันทึกรายจ่าย</button>
+      </div>
+
+      {/* Filter bar */}
+      <div className="filter-bar">
+        <input className="inp inp-sm" style={{minWidth:160}} placeholder="🔍 ค้นหารายการ..." value={filter.search} onChange={e=>setFilter({...filter,search:e.target.value})}/>
+        <select className="inp inp-sm" value={filter.project_id} onChange={e=>setFilter({...filter,project_id:e.target.value})}>
+          <option value="">📁 ทุกโครงการ</option>
+          {projects.map(p=><option key={p.project_id} value={p.project_id}>{p.project_name}</option>)}
+        </select>
+        <select className="inp inp-sm" value={filter.location_id} onChange={e=>setFilter({...filter,location_id:e.target.value})}>
+          <option value="">📍 ทุกสนาม</option>
+          {locations.map(l=><option key={l.location_id} value={l.location_id}>{l.location_name}</option>)}
+        </select>
+        <select className="inp inp-sm" value={filter.category_id} onChange={e=>setFilter({...filter,category_id:e.target.value})}>
+          <option value="">🏷️ ทุกหมวด</option>
+          {categories.map(c=><option key={c.category_id} value={c.category_id}>{c.category_name}</option>)}
+        </select>
+        {(filter.project_id||filter.location_id||filter.category_id||filter.search) && (
+          <button className="btn btn-ghost btn-sm" onClick={()=>setFilter({project_id:"",location_id:"",category_id:"",search:""})}>✕ ล้าง</button>
+        )}
+      </div>
+
+      {/* Summary */}
+      <div style={{display:"flex",gap:12,marginBottom:14,flexWrap:"wrap"}}>
+        <div className="card-sm" style={{display:"flex",gap:16,alignItems:"center",flexWrap:"wrap"}}>
+          <span style={{fontSize:12,color:"var(--text2)"}}>แสดง <strong>{filtered.length}</strong> รายการ</span>
+          <span style={{fontSize:12,color:"var(--text2)"}}>ยอดรวม <strong style={{color:"var(--accent)",fontSize:14}}>{fmt(filteredTotal)} ฿</strong></span>
+        </div>
+      </div>
+
+      {loc ? <div className="skeleton" style={{height:300}}/> : (
+        <div className="tbl-wrap tbl-wrap-scroll">
+          <table className="tbl">
+            <thead>
+              <tr>
+                <th>วันที่</th><th>โครงการ</th><th>สนาม/จังหวัด</th><th>หมวด</th>
+                <th>รายการ</th><th className="text-right">ราคา/หน่วย</th><th className="text-right">จำนวน</th>
+                <th className="text-right">รวม</th><th>เอกสาร</th><th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.length === 0
+                ? <tr><td colSpan={10} className="empty">ไม่มีรายการ</td></tr>
+                : filtered.map((e,i)=>(
+                  <tr key={e.expense_id}>
+                    <td style={{whiteSpace:"nowrap",fontSize:12,color:"var(--text2)"}}>{thDate(e.expense_date||e.created_at)}</td>
+                    <td><span className="badge badge-blue" style={{fontSize:11}}>{e.project_name}</span></td>
+                    <td style={{fontSize:12}}>{e.location_name}</td>
+                    <td><span className="badge badge-gray" style={{fontSize:11}}>{e.category_name}</span></td>
+                    <td style={{maxWidth:200}}>
+                      <div style={{fontSize:13,fontWeight:500}}>{e.description}</div>
+                      {e.note && <div style={{fontSize:11,color:"var(--text3)"}}>{e.note}</div>}
+                    </td>
+                    <td className="text-right" style={{fontSize:13}}>{fmt(e.unit_price)}</td>
+                    <td className="text-right" style={{fontSize:13}}>{fmtN(e.quantity)}</td>
+                    <td className="text-right fw-bold" style={{color:"var(--accent)"}}>{fmt(e.total_amount)} ฿</td>
+                    <td>
+                      <div style={{display:"flex",gap:4}}>
+                        {e.file_quote && <a href={e.file_quote} target="_blank" rel="noreferrer" className="badge badge-green" style={{textDecoration:"none",cursor:"pointer"}}>📄 ใบเสนอ</a>}
+                        {e.file_slip  && <a href={e.file_slip}  target="_blank" rel="noreferrer" className="badge badge-yellow" style={{textDecoration:"none",cursor:"pointer"}}>🧾 สลิป</a>}
+                      </div>
+                    </td>
+                    <td>
+                      <div style={{display:"flex",gap:5}}>
+                        <button className="btn btn-ghost btn-xs" onClick={()=>openEdit(e)}>✏️</button>
+                        <button className="btn btn-danger btn-xs" onClick={()=>setConfirm({id:e.expense_id,name:e.description})}>🗑️</button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              }
+            </tbody>
+            {filtered.length > 0 && (
+              <tfoot>
+                <tr>
+                  <td colSpan={7} className="text-right" style={{fontSize:13}}>ยอดรวม</td>
+                  <td className="text-right" style={{fontSize:15,color:"var(--accent)"}}>{fmt(filteredTotal)} ฿</td>
+                  <td colSpan={2}/>
+                </tr>
+              </tfoot>
+            )}
+          </table>
+        </div>
+      )}
+
+      {/* Add/Edit Modal */}
+      {showModal && (
+        <div className="modal-backdrop" onClick={e=>e.target===e.currentTarget&&setShowModal(false)}>
+          <div className="modal">
+            <div className="modal-title">{editItem?"✏️ แก้ไขรายจ่าย":"➕ บันทึกรายจ่ายใหม่"}</div>
+
+            <div className="field-row">
+              <div className="field">
+                <label>โครงการ *</label>
+                <select className="inp" value={form.project_id} onChange={e=>setForm({...form,project_id:e.target.value})}>
+                  <option value="">— เลือกโครงการ —</option>
+                  {projects.map(p=><option key={p.project_id} value={p.project_id}>{p.project_name}</option>)}
+                </select>
+              </div>
+              <div className="field">
+                <label>สนาม/จังหวัด *</label>
+                <select className="inp" value={form.location_id} onChange={e=>setForm({...form,location_id:e.target.value})}>
+                  <option value="">— เลือกสนาม —</option>
+                  {locations.map(l=><option key={l.location_id} value={l.location_id}>{l.location_name}</option>)}
+                </select>
+              </div>
+            </div>
+
+            <div className="field-row">
+              <div className="field">
+                <label>หมวดหมู่ *</label>
+                <select className="inp" value={form.category_id} onChange={e=>setForm({...form,category_id:e.target.value})}>
+                  <option value="">— เลือกหมวด —</option>
+                  {categories.map(c=><option key={c.category_id} value={c.category_id}>{c.category_name}</option>)}
+                </select>
+              </div>
+              <div className="field">
+                <label>วันที่</label>
+                <input className="inp" type="date" value={form.expense_date} onChange={e=>setForm({...form,expense_date:e.target.value})}/>
+              </div>
+            </div>
+
+            <div className="field"><label>รายการ/คำอธิบาย *</label><input className="inp" value={form.description} onChange={e=>setForm({...form,description:e.target.value})} placeholder="เช่น ค่าจ้างทีมงาน, ซื้อวัสดุก่อสร้าง"/></div>
+
+            <div className="field-row">
+              <div className="field">
+                <label>ราคาต่อหน่วย (฿) *</label>
+                <input className="inp" type="number" step="0.01" value={form.unit_price} onChange={e=>setForm({...form,unit_price:e.target.value})} placeholder="0.00"/>
+              </div>
+              <div className="field">
+                <label>จำนวน</label>
+                <input className="inp" type="number" step="1" value={form.quantity} onChange={e=>setForm({...form,quantity:e.target.value})} placeholder="1"/>
+              </div>
+            </div>
+
+            {/* Auto calc */}
+            <div className="card-sm" style={{background:"#fef9f0",border:"1px solid #f0e0c0",marginBottom:14,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <span style={{fontSize:13,color:"var(--text2)"}}>ยอดรวม</span>
+              <span style={{fontFamily:"'Kanit',sans-serif",fontSize:20,fontWeight:700,color:"var(--accent)"}}>{fmt(totalAmount)} ฿</span>
+            </div>
+
+            <div className="field"><label>หมายเหตุ</label><input className="inp" value={form.note} onChange={e=>setForm({...form,note:e.target.value})} placeholder="รายละเอียดเพิ่มเติม..."/></div>
+
+            <div className="field-row">
+              <div className="field"><label>🔗 Link ใบเสนอราคา</label><input className="inp" value={form.file_quote} onChange={e=>setForm({...form,file_quote:e.target.value})} placeholder="https://drive.google.com/..."/></div>
+              <div className="field"><label>🔗 Link สลิปโอนเงิน</label><input className="inp" value={form.file_slip} onChange={e=>setForm({...form,file_slip:e.target.value})} placeholder="https://drive.google.com/..."/></div>
+            </div>
+
+            <div style={{display:"flex",gap:10}}>
+              <button onClick={save} className="btn btn-primary" style={{flex:1,justifyContent:"center"}}>💾 บันทึก</button>
+              <button onClick={()=>setShowModal(false)} className="btn btn-ghost">ยกเลิก</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {confirm && <Confirm msg={`ต้องการลบ "${confirm.name}" ใช่มั้ย?`} onOk={()=>del(confirm.id)} onCancel={()=>setConfirm(null)}/>}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════
+//  SUMMARY PAGE
+// ════════════════════════════════════════════════════════════════
+function SummaryPage() {
+  const [data, setData] = useState(null);
+  const [projects, setProjects] = useState([]);
+  const [filter, setFilter] = useState({ project_id:"" });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(()=>{
+    Promise.all([apiGet({action:"getSummary",project_id:filter.project_id}), apiGet({action:"getProjects"})]).then(([sr,pr])=>{
+      if(sr.ok) setData(sr.data);
+      if(pr.ok) setProjects(pr.data);
+      setLoading(false);
+    });
+  },[filter.project_id]);
+
+  const reload = (pid) => {
+    setLoading(true);
+    setFilter({project_id:pid});
+  };
+
+  return (
+    <div className="page fade-in">
+      <div className="page-header">
+        <div className="page-title">สรุปค่าใช้จ่าย</div>
+        <div className="page-subtitle">รายงานแยกตามโครงการ สนาม และหมวดหมู่</div>
+      </div>
+
+      <div className="filter-bar" style={{marginBottom:20}}>
+        <select className="inp inp-sm" value={filter.project_id} onChange={e=>reload(e.target.value)}>
+          <option value="">📁 ทุกโครงการ</option>
+          {projects.map(p=><option key={p.project_id} value={p.project_id}>{p.project_name}</option>)}
+        </select>
+      </div>
+
+      {loading ? <div className="skeleton" style={{height:400}}/> : !data ? <div className="empty">โหลดไม่สำเร็จ</div> : (
+        <div style={{display:"grid",gap:20}}>
+          {/* By Location */}
+          <div className="card">
+            <div style={{fontFamily:"'Kanit',sans-serif",fontWeight:700,fontSize:16,marginBottom:16}}>📍 สรุปตามสนาม/จังหวัด</div>
+            <div className="tbl-wrap">
+              <table className="tbl">
+                <thead><tr><th>สนาม/จังหวัด</th><th className="text-right">รายการ</th><th className="text-right">ยอดรวม</th><th className="text-right">สัดส่วน</th></tr></thead>
+                <tbody>
+                  {(data.byLocation||[]).map((l,i)=>{
+                    const pct = data.grandTotal ? ((l.total_amount/data.grandTotal)*100).toFixed(1) : 0;
+                    return (
+                      <tr key={i}>
+                        <td><strong>{l.location_name}</strong></td>
+                        <td className="text-right">{fmtN(l.count)}</td>
+                        <td className="text-right fw-bold" style={{color:"var(--accent)"}}>{fmt(l.total_amount)} ฿</td>
+                        <td className="text-right" style={{minWidth:120}}>
+                          <div style={{display:"flex",alignItems:"center",gap:8,justifyContent:"flex-end"}}>
+                            <div className="progress-track" style={{width:60}}>
+                              <div className="progress-fill" style={{width:`${pct}%`,background:COLORS[i%COLORS.length]}}/>
+                            </div>
+                            <span style={{fontSize:11,color:"var(--text2)"}}>{pct}%</span>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+                <tfoot>
+                  <tr><td>รวมทั้งหมด</td><td className="text-right">{fmtN((data.byLocation||[]).reduce((s,l)=>s+l.count,0))}</td><td className="text-right" style={{color:"var(--accent)"}}>{fmt(data.grandTotal||0)} ฿</td><td/></tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+
+          {/* By Category */}
+          <div className="card">
+            <div style={{fontFamily:"'Kanit',sans-serif",fontWeight:700,fontSize:16,marginBottom:16}}>🏷️ สรุปตามหมวดหมู่</div>
+            <div className="tbl-wrap">
+              <table className="tbl">
+                <thead><tr><th>หมวดหมู่</th><th className="text-right">รายการ</th><th className="text-right">ยอดรวม</th><th className="text-right">สัดส่วน</th></tr></thead>
+                <tbody>
+                  {(data.byCategory||[]).map((c,i)=>{
+                    const pct = data.grandTotal ? ((c.total_amount/data.grandTotal)*100).toFixed(1) : 0;
+                    return (
+                      <tr key={i}>
+                        <td><strong>{c.category_name}</strong></td>
+                        <td className="text-right">{fmtN(c.count)}</td>
+                        <td className="text-right fw-bold" style={{color:"var(--accent)"}}>{fmt(c.total_amount)} ฿</td>
+                        <td className="text-right" style={{minWidth:120}}>
+                          <div style={{display:"flex",alignItems:"center",gap:8,justifyContent:"flex-end"}}>
+                            <div className="progress-track" style={{width:60}}>
+                              <div className="progress-fill" style={{width:`${pct}%`,background:COLORS[(i+2)%COLORS.length]}}/>
+                            </div>
+                            <span style={{fontSize:11,color:"var(--text2)"}}>{pct}%</span>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* By Project (when showing all) */}
+          {!filter.project_id && (data.byProject||[]).length > 0 && (
+            <div className="card">
+              <div style={{fontFamily:"'Kanit',sans-serif",fontWeight:700,fontSize:16,marginBottom:16}}>📁 สรุปตามโครงการ</div>
+              <div className="tbl-wrap">
+                <table className="tbl">
+                  <thead><tr><th>โครงการ</th><th className="text-right">รายการ</th><th className="text-right">งบประมาณ</th><th className="text-right">ใช้ไปแล้ว</th><th className="text-right">คงเหลือ</th></tr></thead>
+                  <tbody>
+                    {(data.byProject||[]).map((p,i)=>(
+                      <tr key={i}>
+                        <td><strong>{p.project_name}</strong></td>
+                        <td className="text-right">{fmtN(p.count)}</td>
+                        <td className="text-right">{p.budget ? fmt(p.budget)+" ฿" : "-"}</td>
+                        <td className="text-right fw-bold" style={{color:"var(--accent)"}}>{fmt(p.total_amount)} ฿</td>
+                        <td className="text-right" style={{color:p.budget&&(p.budget-p.total_amount)<0?"var(--red)":"var(--green)"}}>
+                          {p.budget ? fmt(p.budget-p.total_amount)+" ฿" : "-"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════
+//  APP ROOT
+// ════════════════════════════════════════════════════════════════
+const NAVS = [
+  { key:"dashboard",  icon:"📊", label:"แดชบอร์ด",  section:"หลัก" },
+  { key:"expenses",   icon:"💸", label:"ค่าใช้จ่าย",  section:"หลัก" },
+  { key:"summary",    icon:"📈", label:"สรุปรายงาน", section:"หลัก" },
+  { key:"projects",   icon:"📁", label:"โครงการ",    section:"ตั้งค่า" },
+  { key:"locations",  icon:"📍", label:"สนาม/จังหวัด",section:"ตั้งค่า" },
+  { key:"categories", icon:"🏷️", label:"หมวดหมู่",   section:"ตั้งค่า" },
+];
+
+function App() {
+  const [page, setPage] = useState("dashboard");
+  const [loading, setLoading] = useState(false);
+  const [toast, setToast] = useState({ msg:"", type:"ok" });
+
+  const showFlash = (msg, type="ok") => setToast({ msg, type });
+  const clearToast = () => setToast({ msg:"", type:"ok" });
+
+  const sections = [...new Set(NAVS.map(n=>n.section))];
+
+  const renderPage = () => {
+    const props = { showFlash, setLoading };
+    switch(page) {
+      case "dashboard":  return <Dashboard onNav={setPage}/>;
+      case "expenses":   return <ExpensesPage {...props}/>;
+      case "summary":    return <SummaryPage/>;
+      case "projects":   return <ProjectsPage {...props}/>;
+      case "locations":  return <LocationsPage {...props}/>;
+      case "categories": return <CategoriesPage {...props}/>;
+      default:           return <Dashboard onNav={setPage}/>;
+    }
+  };
+
+  return (
+    <div className="layout">
+      {loading && <div className="loading-bar"/>}
+      <Toast msg={toast.msg} type={toast.type} onClose={clearToast}/>
+
+      {/* Sidebar */}
+      <nav className="sidebar">
+        <div className="sidebar-brand">
+          <div className="sidebar-logo">💰 ExpenseTrack</div>
+          <div className="sidebar-sub">Project Expense System</div>
+        </div>
+        <div className="sidebar-nav">
+          {sections.map(sec=>(
+            <div key={sec}>
+              <div className="sidebar-section-label">{sec}</div>
+              {NAVS.filter(n=>n.section===sec).map(n=>(
+                <button key={n.key} className={`nav-btn ${page===n.key?"active":""}`} onClick={()=>setPage(n.key)}>
+                  <span className="icon">{n.icon}</span>
+                  <span>{n.label}</span>
+                </button>
+              ))}
+            </div>
+          ))}
+        </div>
+        <div className="sidebar-bottom">
+          <div style={{fontSize:11,color:"rgba(255,255,255,0.2)",textAlign:"center"}}>Project Expense System v1.0</div>
+        </div>
+      </nav>
+
+      {/* Main Content */}
+      <main className="main">
+        {renderPage()}
+      </main>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
