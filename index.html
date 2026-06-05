@@ -187,7 +187,7 @@ textarea.inp{resize:vertical;min-height:80px}
 </head>
 <body>
 <div id="root"></div>
-<script type="text/babel">
+<script type="text/babel" data-presets="react">
 const { useState, useEffect, useCallback, useRef, useMemo } = React;
 
 // ── CONFIG ──────────────────────────────────────────────────────
@@ -195,15 +195,18 @@ const GAS_URL = "https://script.google.com/macros/s/AKfycbxxWFDDcsT_ztXLYmSwbYnt
 
 // ── API ─────────────────────────────────────────────────────────
 async function apiGet(params) {
-  const res = await fetch(`${GAS_URL}?${new URLSearchParams(params)}`, {
-    method: "GET",
-    redirect: "follow",   // ← สำคัญมาก GAS มี redirect
-  });
-  return res.json();
+  try {
+    const res = await fetch(`${GAS_URL}?${new URLSearchParams(params)}`, {
+      method: "GET", redirect: "follow",
+    });
+    return res.json();
+  } catch(e) { return { ok: false, error: e.message }; }
 }
 async function apiPost(body) {
-  const res = await fetch(GAS_URL, { method:"POST", redirect:"follow", body:JSON.stringify(body) });
-  return res.json();
+  try {
+    const res = await fetch(GAS_URL, { method:"POST", redirect:"follow", body:JSON.stringify(body) });
+    return res.json();
+  } catch(e) { return { ok: false, error: e.message }; }
 }
 
 // ── UTILS ────────────────────────────────────────────────────────
