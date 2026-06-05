@@ -539,7 +539,7 @@ function LocationsPage({ showFlash, setLoading }) {
                     <td className="text-center"><span className="badge badge-blue">{l.expense_count||0}</span></td>
                     <td className="fw-bold" style={{color:"var(--accent)"}}>{fmt(l.total_amount||0)} ฿</td>
                     <td>
-                      <div style={{display:"flex",gap:6"}}>
+                      <div style={{display:"flex",gap:6}}>
                         <button className="btn btn-ghost btn-xs" onClick={()=>{setForm({location_name:l.location_name,description:l.description||""});setEditItem(l);setShowModal(true)}}>✏️</button>
                         <button className="btn btn-danger btn-xs" onClick={()=>setConfirm({id:l.location_id,name:l.location_name})}>🗑️</button>
                       </div>
